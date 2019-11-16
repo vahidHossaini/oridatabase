@@ -1,0 +1,25 @@
+{
+  "name": "oridatabase",
+  "version": "0.0.1",
+  "description": "origamicore database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vahidHossaini/oridatabase.git"
+  },
+  "keywords": [
+    "origamicore",
+    "database",
+    "mongodb",
+    "mysql"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vahidHossaini/oridatabase/issues"
+  },
+  "homepage": "https://github.com/vahidHossaini/oridatabase#readme"
+}
