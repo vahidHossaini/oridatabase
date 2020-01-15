@@ -86,6 +86,14 @@ var convert = function(token)
            // console.log('VVVVV ',lf)
             return {"$and":[lf,cv]}
         }
+        
+		if(token.type=="OrExpression")
+        {
+            var cv=convert(token.value.right)
+            var lf=convert(token.value.left) 
+           // console.log('VVVVV ',lf)
+            return {"$or":[lf,cv]}
+        }
         if(token.type=="EqualsExpression")
         {
             var s={}

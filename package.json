@@ -1,6 +1,6 @@
 {
   "name": "oridatabase",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "description": "origamicore database",
   "main": "index.js",
   "scripts": {

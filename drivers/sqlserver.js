@@ -4,6 +4,7 @@ module.exports = class mssqlService
 {
     constructor(config)
     {
+		this.struct={};
         var conData={
             user: config.username,
             password: config.password,
@@ -12,6 +13,7 @@ module.exports = class mssqlService
         }
         sql.connect(conData).then(pool => {
             this.connection=pool
+			console.log('Connect to SQL Server')
         })
         
     }
@@ -286,15 +288,19 @@ module.exports = class mssqlService
   {
       var self=this
       var query = this.CreateSyntax(name,box,odata)
+	  //console.log('<<<<<<<<<<<<<',query);
       var ms=this.struct[name] 
-     self. connection.query(query.syntax,query.param, function (error, results, fields) {
+	  //console.log('<<<<<<<<<<<<<',ms);
+	  var request=self.connection.request()
+	  //query.param
+     request.query(query.syntax, function (error, results, fields) {
          console.log('MYSQL')
          console.log(query)
        //  console.log(results)
         if(error)
             return func({message:''})
        
-           for(var x of results)
+           for(var x of results.recordset)
            {
                for(var j in x)
                {
@@ -339,11 +345,11 @@ module.exports = class mssqlService
                  console.log(query.count)
                  console.log(query.param)
              }
-            func(null,{value:results,count:results1[0].c})
+            func(null,{value:results.recordset,count:results1[0].c})
           })
         }
         else {
-          func(null,{value:results})
+          func(null,{value:results.recordset})
         }
       })
   }
@@ -373,39 +379,68 @@ module.exports = class mssqlService
       
       var param=[]
       var we=''
+	  var counter=0;
+	  var request=self.connection.request()
       for(var a of keys)
       {
-        we+=' '+a+' = ?  and '
-        param.push(data[a])
+        we+=' '+a+' = @var'+(counter)+'  and '
+        //param.push(data[a])
+		var tp=typeof(data[a])
+		if(tp=="string")
+		{
+			request=request.input('var'+(counter)+'', sql.NVarChar(50), data[a])
+			
+		}
+		else if(tp=="number")
+		{
+			request=request.input('var'+(counter)+'', sql.Int ,data[a])
+		}
+		counter++;
       }
       if(we)
           we=we.substr(0,we.length-4)
       s+=we
-              console.log(s)
-              console.log(param)
-      self.connection.query(s,param, function (e1, r1, f1) {
+             // console.log(s)
+             // console.log(param)
+      request.query(s, function (e1, r1, f1) {
           if(e1)
               console.log(e1)
-        if(r1[0].c==0)
-        {
-          var iparam=[]
-          var ins='insert into '+name+' ('
-          for(var x in data)
-          {
-            ins+=x+' ,'
-            iparam.push(data[x])
-          }
-          ins=ins.substr(0,ins.length-1)+')values('
-          for(var x in data)
-          {
-            ins+='? ,'
-          }
-          ins=ins.substr(0,ins.length-1)+')' 
-          self.connection.query(ins,iparam, function (e, r, f) {
-            if(e)
-              return func(e)
-            return func(null,{isDone:true})
-          })
+		console.log('--------------',JSON.stringify(r1,null,4))  
+		var counter=0;
+			var request1=self.connection.request()	
+        if(r1.recordset[0].c==0)
+        {	
+		  var iparam=[]
+		  var ins='insert into '+name+' ('
+		  for(var x in data)
+		  {
+			ins+=x+' ,'
+			
+			//iparam.push(data[x])
+		  }
+		  ins=ins.substr(0,ins.length-1)+')values('
+		  for(var x in data)
+		  {
+			ins+='@var'+counter+' ,'
+				var tp=typeof(data[x]);
+				if(tp=="string")
+				{
+					request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[x])
+					
+				}
+				else if(tp=="number")
+				{
+					request1=request1.input('var'+(counter)+'', sql.Int ,data[x])
+				}
+				counter++;
+		  }
+		  ins=ins.substr(0,ins.length-1)+')' ;
+		  
+		  request1.query(ins, function (e, r, f) {
+			if(e)
+			  return func(e)
+			return func(null,{isDone:true})
+		  })
         }
         else
         {
@@ -413,25 +448,44 @@ module.exports = class mssqlService
           var ups='update '+name+' set '
           for(var x in data)
           {
-            ups+= x + ' =  ? ,'
+            ups+= x + ' =  @var'+counter+' ,'
             iparam.push(data[x])
+			
+			var tp=typeof(data[x]);
+			if(tp=="string")
+			{
+				request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[x])
+				
+			}
+			else if(tp=="number")
+			{
+				request1=request1.input('var'+(counter)+'', sql.Int ,data[x])
+			}
+			counter++;
+			
           }
           ups=ups.substr(0,ups.length-1) + ' where '
-          
-          
-            var we=''
+          var we=''
           for(var a of keys)
           {
-            we+=' '+a+' = ? and '
-            iparam.push(data[a])
+            we+=' '+a+' = @var'+counter+' and '
+			
+			var tp=typeof(data[a]);
+			if(tp=="string")
+			{
+				request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[a])
+				
+			}
+			else if(tp=="number")
+			{
+				request1=request1.input('var'+(counter)+'', sql.Int ,data[a])
+			}
+			counter++;
           }  
           if(we)
               we=we.substr(0,we.length-4)
-          ups+=we
-          console.log('update')
-          console.log(ups)
-          console.log(iparam)
-          self.connection.query(ups,iparam, function (e, r, f) {
+          ups+=we 
+          request1.query(ups, function (e, r, f) {
               
           console.log(e)
           console.log(r)

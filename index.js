@@ -76,6 +76,9 @@ module.exports = class defaultIndex
 	{
 		this.config=config.statics
 		this.context=this.config.context 
+        this.bootstrap=require('./bootstrap.js')
+        this.enums=require('./struct.js') 
+        this.tempConfig=require('./config.js')
 		global.db=new globalDb(dist)
 		 
         for(var a of this.config.connection)
