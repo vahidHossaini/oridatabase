@@ -262,14 +262,6 @@ module.exports = class mssqlService
       count+=' where '+ where + ' '
     }
 
-    if(order.length)
-        syntax+=' order by '
-    for(var a of order)
-    {
-      syntax+= a[0]+' ,'
-    }
-    if(order.length)
-      syntax=syntax.substr(syntax.length-1)
     
     if(selectGroup.length)
     {
@@ -278,6 +270,18 @@ module.exports = class mssqlService
             syntax+=a+' ,'
         syntax=syntax.substr(0,syntax.length-1)
     }
+	
+    if(order.length)
+        syntax+=' order by '
+    for(var a of order)
+    {
+      syntax+= a[0]+' ,'
+    }
+    if(order.length)
+      syntax=syntax.substr(0,syntax.length-1)
+	
+	
+	
     if(odata.$top)
       syntax+=' LIMIT '+odata.$top
     if(odata.$skip)
@@ -292,14 +296,21 @@ module.exports = class mssqlService
       var ms=this.struct[name] 
 	  //console.log('<<<<<<<<<<<<<',ms);
 	  var request=self.connection.request()
+	  for(var a=0;a<query.param.length;a++)
+	  {
+		  query.syntax=query.syntax.replace('?' ,"@var"+a)
+		  self.setParam(request,query.param[a],a);
+	  }
 	  //query.param
      request.query(query.syntax, function (error, results, fields) {
          console.log('MYSQL')
          console.log(query)
        //  console.log(results)
         if(error)
+		{
+			console.log(error)
             return func({message:''})
-       
+		}
            for(var x of results.recordset)
            {
                for(var j in x)
@@ -353,6 +364,24 @@ module.exports = class mssqlService
         }
       })
   }
+  setParam(request,data,counter)
+  {
+	var tp=typeof(data)
+	
+				console.log('>>>>>>',data,"  ",tp)
+	if(tp=="string")
+	{
+		request=request.input('var'+(counter)+'', sql.NVarChar(50), data)
+	}
+	else if(tp=="number")
+	{
+		request=request.input('var'+(counter)+'', sql.Int ,data)
+	}
+	else if(tp=="boolean")
+	{
+		request=request.input('var'+(counter)+'', sql.Bit ,data)
+	}
+  }
   Save(name,keys,data,func)
   {
       var self=this
@@ -385,27 +414,20 @@ module.exports = class mssqlService
       {
         we+=' '+a+' = @var'+(counter)+'  and '
         //param.push(data[a])
-		var tp=typeof(data[a])
-		if(tp=="string")
-		{
-			request=request.input('var'+(counter)+'', sql.NVarChar(50), data[a])
-			
-		}
-		else if(tp=="number")
-		{
-			request=request.input('var'+(counter)+'', sql.Int ,data[a])
-		}
+		self.setParam(request,data[a],counter)
+		
+		 
 		counter++;
       }
       if(we)
           we=we.substr(0,we.length-4)
       s+=we
-             // console.log(s)
+              //console.log(we)
              // console.log(param)
       request.query(s, function (e1, r1, f1) {
           if(e1)
               console.log(e1)
-		console.log('--------------',JSON.stringify(r1,null,4))  
+		//console.log('--------------',JSON.stringify(r1,null,4))  
 		var counter=0;
 			var request1=self.connection.request()	
         if(r1.recordset[0].c==0)
@@ -422,18 +444,11 @@ module.exports = class mssqlService
 		  for(var x in data)
 		  {
 			ins+='@var'+counter+' ,'
-				var tp=typeof(data[x]);
-				if(tp=="string")
-				{
-					request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[x])
-					
-				}
-				else if(tp=="number")
-				{
-					request1=request1.input('var'+(counter)+'', sql.Int ,data[x])
-				}
+			
+			self.setParam(request1,data[x],counter)
+				
 				counter++;
-		  }
+		  }console.log('--------------',JSON.stringify(ins,null,4))  
 		  ins=ins.substr(0,ins.length-1)+')' ;
 		  
 		  request1.query(ins, function (e, r, f) {
@@ -451,16 +466,8 @@ module.exports = class mssqlService
             ups+= x + ' =  @var'+counter+' ,'
             iparam.push(data[x])
 			
-			var tp=typeof(data[x]);
-			if(tp=="string")
-			{
-				request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[x])
-				
-			}
-			else if(tp=="number")
-			{
-				request1=request1.input('var'+(counter)+'', sql.Int ,data[x])
-			}
+			self.setParam(request1,data[x],counter)
+			 
 			counter++;
 			
           }
@@ -470,16 +477,8 @@ module.exports = class mssqlService
           {
             we+=' '+a+' = @var'+counter+' and '
 			
-			var tp=typeof(data[a]);
-			if(tp=="string")
-			{
-				request1=request1.input('var'+(counter)+'', sql.NVarChar(50), data[a])
-				
-			}
-			else if(tp=="number")
-			{
-				request1=request1.input('var'+(counter)+'', sql.Int ,data[a])
-			}
+			self.setParam(request1,data[a],counter)
+			 
 			counter++;
           }  
           if(we)

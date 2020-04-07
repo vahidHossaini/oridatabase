@@ -726,16 +726,15 @@ module.exports = class mongodb
         self.connection.collection(name).insertOne(data, function(err, res) { 
             var obj={}
             if(!err)
-                obj.isDone=true
-             else
-			 {				 
+            {
+                obj.isDone=true     			 
 				if(res.result)    
 					 obj.insertedCount=res.result.n
 				if(res.insertedId)
 				{
 					obj._id=res.insertedId
-				}  
-			 }              
+				}            
+            }               
             //console.log(obj)
             //console.log(res)
             func(err, obj)
