@@ -1,6 +1,8 @@
  
 //var createFilter = require('odata-v4-mongodb').createFilter;
 var parser = require('odata-v4-parser');
+const { Client } = require('pg')
+
 var methods=function(token)
 {
     if(token.method=="startswith")
@@ -55,7 +57,7 @@ var convert = function(token)
              } 
 
 
-//Edm.DateTime
+        //Edm.DateTime
              if(token.value=="Edm.Decimal"|| token.value=="Edm.Double"||token.value=="Edm.Single")
              {
                  return parseFloat(token.raw)
@@ -322,8 +324,7 @@ module.exports = class mongodb
         var order=[]
         
         if(box.select)
-        {
-					//console.log('------->',box.select)
+        { 
             for(var x of box.select)
             {
                 if(typeof(x)=='string')
